@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Turbulencias</title>
+  <style>
+    body {
+      background: linear-gradient(skyblue, white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    #avion {
+      width: 120px;
+      margin: 20px;
+      transition: transform 0.05s;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1em;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #00000033;
+      text-align: center;
+      width: 300px;
+    }
+
+    .slider {
+      margin: 10px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .output {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+    <h1 style="color: darkslategrey;">Simulador de Turbulencias</h1>
+  <div class="panel">
+    <div class="slider">
+      <label for="viento">Velocidad viento (m/s): <span id="valorViento">10</span></label>
+      <input type="range" id="viento" min="0" max="100" value="10">
+    </div>
+
+    <div class="slider">
+      <label for="tamano">Tamaño avión (m): <span id="valorTamano">10</span></label>
+      <input type="range" id="tamano" min="5" max="70" value="10">
+    </div>
+
+    <div class="slider">
+      <label for="altitud">Altitud (m): <span id="valorAltitud">0</span></label>
+      <input type="range" id="altitud" min="0" max="12000" step="500" value="0">
+    </div>
+
+    <div class="slider">
+      <label for="extra">Condiciones extremas 🌪️: <span id="valorExtra">1.0</span></label>
+      <input type="range" id="extra" min="0.5" max="3" step="0.1" value="1">
+    </div>
+
+    <div class="output">
+      Re estimado: <span id="reynolds">0</span>
+    </div>
+  </div>
+
+  <img id="avion" src="https://static.vecteezy.com/system/resources/previews/037/277/866/non_2x/flying-airplane-isolated-on-background-3d-rendering-illustration-free-png.png" alt="Avión">
+
+  <script>
+    const avion = document.getElementById('avion');
+
+    // Inputs
+    const vientoInput = document.getElementById('viento');
+    const tamanoInput = document.getElementById('tamano');
+    const altitudInput = document.getElementById('altitud');
+    const extraInput = document.getElementById('extra');
+
+    // Labels
+    const valorViento = document.getElementById('valorViento');
+    const valorTamano = document.getElementById('valorTamano');
+    const valorAltitud = document.getElementById('valorAltitud');
+    const valorExtra = document.getElementById('valorExtra');
+    const reynoldsSpan = document.getElementById('reynolds');
+
+    let t = 0;
+
+    // Función para estimar densidad y viscosidad según altitud
+    function condicionesAtmosfericas(altitud) {
+      // Datos aproximados por simplificación
+      const rho = 1.225 * Math.exp(-altitud / 8000); // densidad disminuye exponencialmente
+      const mu = 1.81e-5 * (1 - 0.000022 * altitud); // viscosidad disminuye ligeramente
+      return { rho, mu };
+    }
+
+    function actualizarValores() {
+      valorViento.textContent = vientoInput.value;
+      valorTamano.textContent = tamanoInput.value;
+      valorAltitud.textContent = altitudInput.value;
+      valorExtra.textContent = extraInput.value;
+    }
+
+    function calcularReynolds() {
+      const u = parseFloat(vientoInput.value);
+      const L = parseFloat(tamanoInput.value);
+      const altitud = parseFloat(altitudInput.value);
+
+      const { rho, mu } = condicionesAtmosfericas(altitud);
+      const Re = (rho * u * L) / mu;
+      reynoldsSpan.textContent = Math.round(Re);
+      return { Re, rho, mu, L, u };
+    }
+
+    function simularTurbulencia() {
+      const { Re } = calcularReynolds();
+      const extraFactor = parseFloat(extraInput.value);
+      const intensidad = Math.min(Re / 50000, 3) * extraFactor;
+
+      const baseX = Math.sin(t / 15) * 4 * intensidad;
+      const baseY = Math.cos(t / 20) * 4 * intensidad;
+
+      const rafagaX = (Math.random() - 0.5) * 15 * intensidad;
+      const rafagaY = (Math.random() - 0.5) * 15 * intensidad;
+      const rotacion = (Math.random() - 0.5) * 10 * intensidad;
+
+      avion.style.transform = `translate(${baseX + rafagaX}px, ${baseY + rafagaY}px) rotate(${rotacion}deg)`;
+
+      t++;
+    }
+
+    // Event listeners
+    vientoInput.addEventListener('input', actualizarValores);
+    tamanoInput.addEventListener('input', actualizarValores);
+    altitudInput.addEventListener('input', actualizarValores);
+    extraInput.addEventListener('input', actualizarValores);
+
+    // Inicializar
+    actualizarValores();
+    calcularReynolds();
+    setInterval(() => {
+      calcularReynolds();
+      simularTurbulencia();
+    }, 50);
+  </script>
+
+</body>
+</html>
